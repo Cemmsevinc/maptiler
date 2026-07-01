@@ -7,11 +7,17 @@ const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-const env = fs.readFileSync(path.join(__dirname, '.env'), 'utf8');
-env.split('\n').forEach(line => {
-  const [key, ...rest] = line.split('=');
-  if (key && rest.length) process.env[key.trim()] = rest.join('=').trim();
-});
+try {
+  const env = fs.readFileSync(path.join(__dirname, '.env'), 'utf8');
+  env.split('\n').forEach(line => {
+    const [key, ...rest] = line.split('=');
+    if (key && rest.length && !process.env[key.trim()]) {
+      process.env[key.trim()] = rest.join('=').trim();
+    }
+  });
+} catch (_) {
+  // No .env on disk (e.g. Render/Vercel) — rely on host-provided env vars
+}
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -169,4 +175,5 @@ Budget = under city average, mid = around average, premium = above average.`
   }
 });
 
-app.listen(3000, () => console.log('Running on http://localhost:3000'));
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Running on http://localhost:${PORT}`));
